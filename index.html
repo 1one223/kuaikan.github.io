@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🧧 恭喜发财</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { 
+    width: 100%; height: 100%; 
+    overflow: hidden; 
+    overscroll-behavior: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  
+  /* 封面伪装 */
+  #cover {
+    position: fixed; inset: 0;
+    background: linear-gradient(180deg, #ff4757 0%, #ff6b81 100%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 1; color: #fff; text-align: center;
+    padding: 20px;
+  }
+  #cover h1 { font-size: 48px; margin-bottom: 10px; }
+  #cover p { font-size: 18px; opacity: 0.95; margin-bottom: 40px; }
+  .btn {
+    padding: 16px 50px;
+    background: #ffd700; color: #c0392b;
+    border: none; border-radius: 50px;
+    font-size: 22px; font-weight: bold;
+    box-shadow: 0 6px 0 #e1b12c, 0 10px 20px rgba(0,0,0,0.2);
+    transition: transform 0.1s;
+  }
+  .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #e1b12c; }
+  
+  /* 地狱模式 */
+  #hell {
+    display: none;
+    position: fixed; inset: 0;
+    z-index: 9999;
+    background: #000;
+    touch-action: none;
+  }
+  
+  /* 漂浮文字 */
+  .floater {
+    position: absolute;
+    font-size: 36px; font-weight: 900;
+    color: #fff;
+    pointer-events: none;
+    text-shadow: 3px 3px 0 #ff00de, -2px -2px 0 #00d2ff;
+    animation: fly 3s linear infinite, spin 4s linear infinite;
+    white-space: nowrap;
+  }
+  @keyframes fly {
+    0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+    25% { transform: translate(30px, -40px) rotate(90deg); }
+    50% { transform: translate(-20px, -80px) rotate(180deg); }
+    75% { transform: translate(40px, -40px) rotate(270deg); }
+    100% { transform: translate(0, 100vh) rotate(360deg); opacity: 0; }
+  }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  
+  /* 假弹窗 */
+  .fake-box {
+    position: fixed;
+    top: 40%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    background: rgba(255,255,255,0.96);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    color: #333;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    z-index: 10001;
+    animation: shake 0.2s infinite;
+    border: 2px solid #ff4757;
+  }
+  .fake-box h3 { color: #e74c3c; font-size: 20px; margin-bottom: 10px; }
+  .fake-box p { font-size: 15px; margin-bottom: 15px; line-height: 1.5; }
+  .fake-box button {
+    padding: 10px 24px; margin: 0 6px;
+    border: none; border-radius: 6px;
+    font-size: 16px; font-weight: 600;
+  }
+  .btn-ok { background: #ff4757; color: #fff; }
+  .btn-cancel { background: #bdc3c7; color: #2d3436; }
+  @keyframes shake {
+    0%,100% { transform: translate(-50%, -50%) translateX(-4px); }
+    50% { transform: translate(-50%, -50%) translateX(4px); }
+  }
+  
+  /* 假的关闭按钮 */
+  #fake-close {
+    position: fixed; top: 12px; right: 12px;
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 28px; font-weight: bold;
+    z-index: 10000; backdrop-filter: blur(4px);
+  }
+  
+  /* 紧急停止提示（隐藏得很深） */
+  #hint {
+    position: fixed; bottom: 4px; left: 4px;
+    color: rgba(255,255,255,0.15); font-size: 10px; z-index: 10002;
+  }
+</style>
+</head>
+<body>
+
+<!-- 伪装页面 -->
+<div id="cover">
+  <h1>🧧</h1>
+  <h2 style="font-size:28px;margin-bottom:8px;">恭喜您获得</h2>
+  <p>哦泡果奶全年免费畅饮资格！<br>点击下方按钮立即领取</p>
+  <button class="btn" onclick="openHell()">👉 立即领取</button>
+  <p style="margin-top:30px;font-size:12px;opacity:0.7;">活动最终解释权归O泡星球所有</p>
+</div>
+
+<!-- 整活主体 -->
+<div id="hell">
+  <div id="fake-close" onclick="escalate()">×</div>
+  <div id="hint">左上角连点5次可停下</div>
+</div>
+
+<script>
+let isRunning = false;
+let hell = document.getElementById('hell');
+let synth = window.speechSynthesis;
+let audioCtx;
+let timers = [];
+
+// 语音循环：我要O泡
+function speakLoop() {
+  if (!isRunning) return;
+  let text = '我要哦泡！哦泡果奶！给我哦泡！给我哦泡！哦泡果奶要要要！';
+  let u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN';
+  u.rate = 1.6;   // 语速快
+  u.pitch = 2.0;  // 声音尖
+  u.volume = 1.0;
+  u.onend = () => { if(isRunning) setTimeout(speakLoop, 80); };
+  synth.speak(u);
+}
+
+// 震动循环
+function vibrateLoop() {
+  if (!isRunning) return;
+  if (navigator.vibrate) navigator.vibrate([400, 80, 400, 80, 600]);
+  timers.push(setTimeout(vibrateLoop, 1300));
+}
+
+// Web Audio 蜂鸣备用（防止某些手机不支持语音）
+function beepLoop() {
+  if (!isRunning || !audioCtx) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  let osc = audioCtx.createOscillator();
+  let gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'sawtooth';
+  osc.frequency.value = 600 + Math.random() * 800;
+  gain.gain.value = 0.08;
+  osc.start();
+  gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.12);
+  osc.stop(audioCtx.currentTime + 0.12);
+  timers.push(setTimeout(beepLoop, 160));
+}
+
+// 背景疯狂变色
+function discoMode() {
+  if (!isRunning) return;
+  let hue = Math.floor(Math.random() * 360);
+  hell.style.backgroundColor = `hsl(${hue}, 90%, 55%)`;
+  timers.push(setTimeout(discoMode, 120));
+}
+
+// 满屏漂浮文字
+function spawnText() {
+  if (!isRunning) return;
+  let el = document.createElement('div');
+  el.className = 'floater';
+  let pool = ['O泡','哦泡','给我O泡','要要要','果奶','O泡时间到！'];
+  el.innerText = pool[Math.floor(Math.random() * pool.length)];
+  el.style.left = Math.random() * 90 + '%';
+  el.style.top = '-50px';
+  el.style.fontSize = (24 + Math.random() * 40) + 'px';
+  el.style.color = `hsl(${Math.random()*360},100%,70%)`;
+  el.style.animationDuration = (2 + Math.random()*3) + 's';
+  hell.appendChild(el);
+  
+  // 自动清理，防止卡死
+  setTimeout(() => { if(el.parentNode) el.parentNode.removeChild(el); }, 5000);
+  
+  timers.push(setTimeout(spawnText, 180));
+}
+
+// 假弹窗增殖
+function spawnAlert() {
+  if (!isRunning) return;
+  let box = document.createElement('div');
+  box.className = 'fake-box';
+  let msgs = [
+    '您的手机已被O泡能量入侵！',
+    '系统检测到大量果奶病毒！',
+    '点击确定领取一桶O泡！',
+    '您的微信余额已转化为O泡币！'
+  ];
+  box.innerHTML = `
+    <h3>⚠️ 系统警告</h3>
+    <p>${msgs[Math.floor(Math.random()*msgs.length)]}</p>
+    <button class="btn-ok" onclick="escalate()">确定</button>
+    <button class="btn-cancel" onclick="escalate()">取消</button>
+  `;
+  // 随机偏移，不要完全重叠
+  let offset = (Math.random() - 0.5) * 60;
+  box.style.transform = `translate(calc(-50% + ${offset}px), calc(-50% + ${offset}px))`;
+  hell.appendChild(box);
+  
+  // 限制弹窗数量，避免真卡死
+  let boxes = document.querySelectorAll('.fake-box');
+  if (boxes.length > 8) boxes[0].remove();
+  
+  timers.push(setTimeout(spawnAlert, 2000 + Math.random() * 3000));
+}
+
+// 点击关闭/按钮 -> 变本加厉
+function escalate() {
+  if (!isRunning) return;
+  // 剧烈震动一下
+  if (navigator.vibrate) navigator.vibrate([100,50,100,50,200,100,500]);
+  // 瞬间生成3个弹窗
+  for(let i=0;i<3;i++) setTimeout(spawnAlert, i*200);
+  // 加速生成文字
+  for(let i=0;i<5;i++) setTimeout(spawnText, i*100);
+}
+
+// 启动地狱
+function openHell() {
+  document.getElementById('cover').style.display = 'none';
+  hell.style.display = 'block';
+  isRunning = true;
+  
+  // 初始化音频上下文（需用户点击激活）
+  try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+  
+  speakLoop();
+  vibrateLoop();
+  beepLoop();
+  discoMode();
+  spawnText();
+  spawnAlert();
+  
+  // 尝试拦截返回键（部分浏览器有效）
+  history.pushState(null, null, location.href);
+  window.onpopstate = function() {
+    history.pushState(null, null, location.href);
+    escalate();
+  };
+}
+
+// 隐藏自救：连续点击左上角5次停止
+let secret = 0;
+document.addEventListener('click', (e) => {
+  if (e.clientX < 60 && e.clientY < 60) {
+    secret++;
+    if (secret >= 5) stopAll();
+  }
+});
+
+function stopAll() {
+  isRunning = false;
+  synth.cancel();
+  timers.forEach(clearTimeout);
+  timers = [];
+  alert('O泡能量已消散！\n（下次还敢）');
+  location.reload();
+}
+
+// 防微信下拉刷新（一定程度上）
+document.body.addEventListener('touchmove', function(e) {
+  if (isRunning) e.preventDefault();
+}, { passive: false });
+</script>
+
+</body>
+</html>
